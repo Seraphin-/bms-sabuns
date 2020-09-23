@@ -1,0 +1,25 @@
+
+*---------------------- HEADER FIELD
+
+#PLAYER 1
+#GENRE 
+#TITLE anim test
+#ARTIST 
+#BPM 120
+#PLAYLEVEL 
+#RANK 3
+
+
+#LNTYPE 1
+
+#BPM01 12000000
+
+
+*---------------------- MAIN DATA FIELD
+
+
+#00001:01
+#00004:01
+#00008:01
+
+

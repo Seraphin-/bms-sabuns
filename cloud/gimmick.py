@@ -1,9 +1,8 @@
-# API Ver: 1.3
+# API Ver: 1.2
 
 # Classes to abstract away BMS for making gimmick charts...
 # o = BMSparser('input.bme')
 # (do stuff)
-# o.optimize()
 # o.write_output('output.bme')
 # Produces big BMS files very slowly.
 
@@ -96,7 +95,7 @@ class LL:
 		return ll_iter_values()		
 
 # Represents a single note
-# Also contains static attributes with common lane numbers
+# Also contains statis attributes with common lane numbers
 class Note:
 	LANE_BGM = '01'
 	LANE_BPM = '08'
@@ -136,9 +135,8 @@ class Measure:
 		self.notes = []
 
 	# Retuns a valid BMS line representation of the measure
-	def get_string(self, mes=None):
-		if mes == None: mes = self.number
-		basestr = '#' + '%03d' % mes + self.lane + ':'
+	def get_string(self):
+		basestr = '#' + '%03d' % self.number + self.lane + ':'
 		notes = ['00'] * self.size
 		try:
 			for n in self.notes:
@@ -165,7 +163,7 @@ class Measure:
 # Class to parse BMS files.
 class BMSparser:
 	from numpy import lcm
-	VERSION = '1.3'
+	VERSION = '1.2'
 
 	# The default encoding is SJIS.
 	def __init__(self, name, enc='cp932'):
@@ -248,23 +246,19 @@ class BMSparser:
 		self._generic_add(self.bpm_measures, self._bpm_index, Note.LANE_BPM, *a)
 
 	# Write out the BMS. Make sure to specify the same encoding it was read in.
-	def write_output(self, name, enc='cp932', skip_reverse_breakpoint=None, skip_reverse_delta=None):
-		f = open(name, 'w', encoding=enc)
-		def delta(i):
-			if skip_reverse_breakpoint is not None:
-				if i >= skip_reverse_breakpoint: return i - skip_reverse_delta
-			return i
+	def write_output(self, name, enc='cp932'):
+		f = open(name, 'w', encoding=enc);
 		for line in self.ignored_lines: f.write(line)
 		for length, i in self.stop_objects.items(): f.write('#STOP' + i + ':' + str(length) + '\n')
 		for bpm, i in self.bpm_objects.items(): f.write('#BPM' + i + ':' + str(bpm) + '\n')
-		for mes, meter in self.meters.items(): f.write('#' + '%03d' % delta(mes) + '02:' + str(meter) + '\n')
+		for mes, meter in self.meters.items(): f.write('#' + '%03d' % mes + '02:' + str(meter) + '\n')
 		for index, mes in self.stop_measures.items():
-			mes.number = delta(index)
+			mes.number = index
 			f.write(mes.get_string() + '\n')
 		for index, mes in self.bpm_measures.items():
-			mes.number = delta(index)
+			mes.number = index
 			f.write(mes.get_string() + '\n')
-		for mes in self.measures: f.write(mes.get_string(delta(mes.number)) + '\n')
+		for mes in self.measures: f.write(mes.get_string() + '\n')
 
 	# Run a function f on each measure in target_measures that match target_lanes.
 	def run(self, f, target_measures, target_lanes):
@@ -359,14 +353,7 @@ class BMSparser:
 				for n in ms[i].notes: last_mes.add(n)
 				self.measures.remove(ms[i])
 		print('collapsed', removed, 'measures')
-		# Remove empty measures
-		removed = 0
-		for mes in self.find(['*'], ['*']):
-			if not mes.notes:
-				removed += 1
-				self.measures.remove(mes)
-		print('removed', removed, 'empty measures')
-		# Set size of measures with only 1 object at t=0 to 1
+		# Resize measures with only 1 note at the beginning to size 1
 		removed = 0
 		all_measures = []
 		for measure in self.stop_measures.values():
@@ -567,29 +554,3 @@ class InsertMesGimmick:
 				self.bms.shift_indices(k+self.insert_mes_offset)
 				self.bms.add(Measure(1, '01', k+self.insert_mes_offset))
 			self.inserted_dict[k] = [start, k+self.insert_mes_offset]
-
-# This class contains tools for animations from images
-class AnimationGimmick:
-	import numpy
-	import matplotlib.pyplot as plt
-	import skimage.transform as transform
-
-	def __init__(self, img):
-		assert(type(img) == InsertMesGimmick)
-		self.g = img
-
-	# We are forced to a width of 8
-	def frameToMineArray(self, frame, height=64, threshold=0.5):
-		frame = self.transform.resize(frame, (height, 8), order=1)
-		#frame_ = self.transform.resize(frame, (height, 8*8), order=0)
-		#self.plt.imshow(frame_)
-		#self.plt.show()
-
-		mines = []
-		# Make a mine if any position is over the threshold
-		for x in range(8):
-			for y in range(height):
-				if any(channel > threshold for channel in frame[y][x]):
-					mines.append([x, y])
-
-		return mines
