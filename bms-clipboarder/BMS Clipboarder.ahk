@@ -17,6 +17,11 @@
   RunUtility("python bgmize.py")
   Return
 
+!^m::
+  CutNotes()
+  RunUtility("python sidemines.py")
+  Return
+
 ^l::
   _PrepareClipboard("Copy", "match1.txt")
   Return
@@ -24,16 +29,16 @@
 ^+l::
   _PrepareClipboard("Cut", "match2.txt")
   RunWait %comspec% /c python patternmatch.py > output.txt, , Min
-  FileRead Clipboard, output.txt
   Sleep 100
+  FileRead Clipboard, output.txt
   Send ^v
   Return
 
 !^l::
   _PrepareClipboard("Cut", "match2.txt")
   RunWait %comspec% /c python soundmatch.py > output.txt, , Min
-  FileRead Clipboard, output.txt
   Sleep 100
+  FileRead Clipboard, output.txt
   Send ^v
   Return
 
