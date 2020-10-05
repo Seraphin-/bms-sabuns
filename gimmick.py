@@ -616,7 +616,7 @@ def randomize(bms, start, end, div):
 				for note in measure.notes:
 					if len(usable[note.pos * (div // measure.size)]) < 6:
 						usable[note.pos * (div // measure.size)].append(note.object)
-						del_queue.append(note)
+						del_queue.append(note) #4.13
 			for note in del_queue: measure.notes.remove(note)
 		for pos, objects in usable.items():
 			possiblities = list(combinations(KEYS, 7-len(objects)))
@@ -626,8 +626,17 @@ def randomize(bms, start, end, div):
 				object_num = 0
 				for key in KEYS:
 					if key not in possiblity:
-						temp = Measure(div, '1' + BMSparser._real_lane(key), measure_number)
-						temp.add(Note(objects[object_num], pos))
+						if pos != 0:
+							new_pos = pos
+							new_div = div
+							while new_pos / 2 % 1 == 0:
+								new_pos /= 2
+								new_div /= 2
+						if pos == 0:
+							new_pos = 0
+							new_div = 1
+						temp = Measure(new_div, '1' + BMSparser._real_lane(key), measure_number)
+						temp.add(Note(objects[object_num], int(new_pos)))
 						bms.ignored_lines.append(temp.get_string() + '\n')
 						object_num += 1
 				bms.ignored_lines.append('#ENDIF' + '\n')
