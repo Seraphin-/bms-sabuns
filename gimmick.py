@@ -612,9 +612,7 @@ def randomize(bms, start, end, div, upper_limit=7):
 		for measure in bms.find([measure_number], [Note.LANE_BGM]):
 			# Pull up to 6
 			del_queue = []
-			msx = measure.size
-			if measure_number in bms.meters:
-				msx /= bms.meters[measure_number]
+			msx = measure.size / bms.meters[measure_number]
 			if div % msx == 0:
 				for note in measure.notes:
 					if len(usable[note.pos * (div // msx)]) < upper_limit:
@@ -626,9 +624,7 @@ def randomize(bms, start, end, div, upper_limit=7):
 			bms.ignored_lines.append('#RANDOM ' + str(len(possiblities)) + '\n')
 			if pos != 0:
 				new_pos = pos
-				new_div = div
-				if measure_number in bms.meters:
-					new_div *= bms.meters[measure_number]
+				new_div = div * bms.meters[measure_number]
 				while new_pos / 2 % 1 == 0 and new_div / 2 % 1 == 0:
 					new_pos /= 2
 					new_div /= 2
