@@ -1,4 +1,4 @@
-# API Ver: 1.3
+# API Ver: 1.4
 
 # Classes to abstract away BMS for making gimmick charts...
 # o = BMSparser('input.bme')
@@ -172,7 +172,7 @@ class Measure:
 # Class to parse BMS files.
 class BMSparser:
 	from numpy import lcm
-	VERSION = '1.3'
+	VERSION = '1.4'
 
 	# The default encoding is SJIS.
 	def __init__(self, name, enc='cp932'):
@@ -262,8 +262,8 @@ class BMSparser:
 				if i >= skip_reverse_breakpoint: return i - skip_reverse_delta
 			return i
 		for line in self.ignored_lines: f.write(line)
-		for length, i in self.stop_objects.items(): f.write('#STOP' + i + ':' + str(length) + '\n')
-		for bpm, i in self.bpm_objects.items(): f.write('#BPM' + i + ':' + str(bpm) + '\n')
+		for length, i in self.stop_objects.items(): f.write('#STOP' + i + ' ' + str(length) + '\n')
+		for bpm, i in self.bpm_objects.items(): f.write('#BPM' + i + ' ' + str(bpm) + '\n')
 		for mes, meter in self.meters.items(): f.write('#' + '%03d' % delta(mes) + '02:' + str(meter) + '\n')
 		for index, mes in self.stop_measures.items():
 			mes.number = delta(index)
@@ -601,8 +601,8 @@ class AnimationGimmick:
 
 		return mines
 
-# Possiblity: specify upper limit in params, decide based on part
-def randomize(bms, start, end, div):
+# Possiblity: decide upper limit based on part instead of needing randomize call to each?
+def randomize(bms, start, end, div, upper_limit=7):
 	from collections import defaultdict
 	from itertools import combinations
 	KEYS = [1,2,3,4,5,6,7]
@@ -612,29 +612,30 @@ def randomize(bms, start, end, div):
 		for measure in bms.find([measure_number], [Note.LANE_BGM]):
 			# Pull up to 6
 			del_queue = []
-			if div % measure.size == 0:
+			msx = measure.size / bms.meters[measure_number]
+			if div % msx == 0:
 				for note in measure.notes:
-					if len(usable[note.pos * (div // measure.size)]) < 6:
-						usable[note.pos * (div // measure.size)].append(note.object)
+					if len(usable[note.pos * (div // msx)]) < upper_limit:
+						usable[note.pos * (div // msx)].append(note.object)
 						del_queue.append(note) #4.13
 			for note in del_queue: measure.notes.remove(note)
 		for pos, objects in usable.items():
 			possiblities = list(combinations(KEYS, 7-len(objects)))
 			bms.ignored_lines.append('#RANDOM ' + str(len(possiblities)) + '\n')
+			if pos != 0:
+				new_pos = pos
+				new_div = div * bms.meters[measure_number]
+				while new_pos / 2 % 1 == 0 and new_div / 2 % 1 == 0:
+					new_pos /= 2
+					new_div /= 2
+			if pos == 0:
+				new_pos = 0
+				new_div = 1
 			for n, possiblity in enumerate(possiblities, 1):
 				bms.ignored_lines.append('#IF ' + str(n) + '\n')
 				object_num = 0
 				for key in KEYS:
 					if key not in possiblity:
-						if pos != 0:
-							new_pos = pos
-							new_div = div
-							while new_pos / 2 % 1 == 0:
-								new_pos /= 2
-								new_div /= 2
-						if pos == 0:
-							new_pos = 0
-							new_div = 1
 						temp = Measure(new_div, '1' + BMSparser._real_lane(key), measure_number)
 						temp.add(Note(objects[object_num], int(new_pos)))
 						bms.ignored_lines.append(temp.get_string() + '\n')
