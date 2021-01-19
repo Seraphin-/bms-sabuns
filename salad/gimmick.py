@@ -601,8 +601,8 @@ class AnimationGimmick:
 
 		return mines
 
-# Possiblity: decide upper limit based on part instead of needing randomize call to each?
-def randomize(bms, start, end, div, upper_limit=7):
+# Possiblity: specify upper limit in params, decide based on part
+def randomize(bms, start, end, div):
 	from collections import defaultdict
 	from itertools import combinations
 	KEYS = [1,2,3,4,5,6,7]
@@ -612,34 +612,29 @@ def randomize(bms, start, end, div, upper_limit=7):
 		for measure in bms.find([measure_number], [Note.LANE_BGM]):
 			# Pull up to 6
 			del_queue = []
-			msx = measure.size
-			if measure_number in bms.meters:
-				msx /= bms.meters[measure_number]
-			if div % msx == 0:
+			if div % measure.size == 0:
 				for note in measure.notes:
-					if len(usable[note.pos * (div // msx)]) < upper_limit:
-						usable[note.pos * (div // msx)].append(note.object)
+					if len(usable[note.pos * (div // measure.size)]) < 6:
+						usable[note.pos * (div // measure.size)].append(note.object)
 						del_queue.append(note) #4.13
 			for note in del_queue: measure.notes.remove(note)
 		for pos, objects in usable.items():
 			possiblities = list(combinations(KEYS, 7-len(objects)))
 			bms.ignored_lines.append('#RANDOM ' + str(len(possiblities)) + '\n')
-			if pos != 0:
-				new_pos = pos
-				new_div = div
-				if measure_number in bms.meters:
-					new_div *= bms.meters[measure_number]
-				while new_pos / 2 % 1 == 0 and new_div / 2 % 1 == 0:
-					new_pos /= 2
-					new_div /= 2
-			if pos == 0:
-				new_pos = 0
-				new_div = 1
 			for n, possiblity in enumerate(possiblities, 1):
 				bms.ignored_lines.append('#IF ' + str(n) + '\n')
 				object_num = 0
 				for key in KEYS:
 					if key not in possiblity:
+						if pos != 0:
+							new_pos = pos
+							new_div = div
+							while new_pos / 2 % 1 == 0:
+								new_pos /= 2
+								new_div /= 2
+						if pos == 0:
+							new_pos = 0
+							new_div = 1
 						temp = Measure(new_div, '1' + BMSparser._real_lane(key), measure_number)
 						temp.add(Note(objects[object_num], int(new_pos)))
 						bms.ignored_lines.append(temp.get_string() + '\n')
