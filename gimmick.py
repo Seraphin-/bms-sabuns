@@ -1,4 +1,4 @@
-# API Ver: 1.4
+# API Ver: 1.5
 
 # Classes to abstract away BMS for making gimmick charts...
 # o = BMSparser('input.bme')
@@ -172,7 +172,7 @@ class Measure:
 # Class to parse BMS files.
 class BMSparser:
 	from numpy import lcm
-	VERSION = '1.4'
+	VERSION = '1.5'
 
 	# The default encoding is SJIS.
 	def __init__(self, name, enc='cp932'):
@@ -186,6 +186,7 @@ class BMSparser:
 		self.meters = LL() # key/value measure/meter
 		self.ignored_lines = []
 		self.mine_damage = '01'
+		self.keysounds = {}
 		# Dict of list of Measure objects per measure. Allowing multiple lets us split up polyrhythms without making excessively long lines.
 		# For now we just make a new measure object per line since it's easy.
 		# We can also split up STOP lines and so on the same way.
@@ -202,6 +203,8 @@ class BMSparser:
 				m = Measure((len(line)-8)/2, line[4:6], mi, self.meters[mi] if mi in self.meters else 1)
 				[m.add(Note(line[7+i*2:9+i*2], i, line[4:6], (len(line)-8)/2)) for i in range((len(line)-8)//2) if line[7+i*2:9+i*2] != '00']
 				self.measures.append(m)
+			elif line.startswith("#WAV"):
+				self.keysounds[line[4:6]] = line[7:]
 			elif line != '\n':
 				self.ignored_lines.append(line)
 
@@ -262,6 +265,7 @@ class BMSparser:
 				if i >= skip_reverse_breakpoint: return i - skip_reverse_delta
 			return i
 		for line in self.ignored_lines: f.write(line)
+		for k, v in self.keysounds.items(): f.write('#WAV%s %s\n' % (k, v))
 		for length, i in self.stop_objects.items(): f.write('#STOP' + i + ' ' + str(length) + '\n')
 		for bpm, i in self.bpm_objects.items(): f.write('#BPM' + i + ' ' + str(bpm) + '\n')
 		for mes, meter in self.meters.items(): f.write('#' + '%03d' % delta(mes) + '02:' + str(meter) + '\n')
@@ -576,6 +580,7 @@ class InsertMesGimmick:
 			self.inserted_dict[k] = [start, k+self.insert_mes_offset]
 
 # This class contains tools for animations from images
+"""
 class AnimationGimmick:
 	import numpy
 	import matplotlib.pyplot as plt
@@ -600,6 +605,7 @@ class AnimationGimmick:
 					mines.append([x, y])
 
 		return mines
+"""
 
 # Possiblity: decide upper limit based on part instead of needing randomize call to each?
 def randomize(bms, start, end, div, upper_limit=7):
