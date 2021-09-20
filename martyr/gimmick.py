@@ -239,8 +239,6 @@ class Measure:
         notes = ['00'] * self.size
         try:
             for n in self.notes:
-                if n.pos < 0:
-                    raise IndexError
                 notes[n.pos] = n.object
         except IndexError:
             print('---- ERROR ----')
@@ -510,7 +508,7 @@ https://twitter.com/okunigon/status/1307656187832201217"
         """
 
         max_number = max(m.number for m in self.measures)
-        if max_number >= 999:  # LR2 does not seem to like #999
+        if max_number >= 1000:
             raise ValueError("Too many measures. No valid BMS can be produced.")
 
         print("<==============================>")
@@ -884,8 +882,8 @@ class InsertMesGimmick:
         Target lanes are lanes at which new measures should be created.
         With minimize lanes, measures that have no target notes will be collapsed.
 
-        :param measure_range: collections.Iterable[int]
-        :param target_lanes: collections.Iterable[str]
+        :param measure_range: Iterable
+        :param target_lanes: Iterable
         :return: None
         """
         for measure_number in measure_range:

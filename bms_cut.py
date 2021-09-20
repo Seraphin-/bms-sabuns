@@ -24,11 +24,11 @@ for i in range(args.length+1):
 	if i == args.length:
 		each = nf - (each * args.length)
 	audio = original.readframes(each)
-	new = wave.open(args.outbase + str(i) + '.wav', 'wb')
+	new = wave.open(args.outbase + "%.2d" % i + '.wav', 'wb')
 	new.setnchannels(nc)
 	new.setnframes(each)
 	new.setframerate(fr)
 	new.setsampwidth(sw)
 	new.writeframes(audio)
 	new.close()
-	print("Wrote", args.outbase + str(i) + '.wav')
+	print("Wrote", args.outbase + "%.2d" % i + '.wav')

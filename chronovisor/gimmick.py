@@ -239,8 +239,6 @@ class Measure:
         notes = ['00'] * self.size
         try:
             for n in self.notes:
-                if n.pos < 0:
-                    raise IndexError
                 notes[n.pos] = n.object
         except IndexError:
             print('---- ERROR ----')
@@ -347,7 +345,9 @@ class BMSparser:
                 self.measures.append(m)
             elif line.startswith("#WAV"):
                 self.keysounds[line[4:6]] = line[7:-1]
-            elif line.startswith("#BPM") and line[4] != ' ':  # TODO 03 BPMs not handled RN
+            elif line.startswith("#BPM"):  # TODO 03 BPMs not handled RN
+                if line[4] == ' ':
+                    continue
                 self.bpm_objects[float(line[7:])] = line[4:6]
             elif line.startswith("#STOP"):
                 self.stop_objects[int(line[8:])] = line[5:7]
@@ -510,7 +510,7 @@ https://twitter.com/okunigon/status/1307656187832201217"
         """
 
         max_number = max(m.number for m in self.measures)
-        if max_number >= 999:  # LR2 does not seem to like #999
+        if max_number >= 1000:
             raise ValueError("Too many measures. No valid BMS can be produced.")
 
         print("<==============================>")
@@ -809,7 +809,7 @@ class InsertMesGimmick:
     """
     from collections import defaultdict
 
-    def __init__(self, bms, max_bpm=0, norm_bpm=0, mes_div=32):
+    def __init__(self, bms, max_bpm, norm_bpm, mes_div):
         """
         Max BPM should be something like XXX00XXX if the original is XXX.
 
@@ -884,8 +884,8 @@ class InsertMesGimmick:
         Target lanes are lanes at which new measures should be created.
         With minimize lanes, measures that have no target notes will be collapsed.
 
-        :param measure_range: collections.Iterable[int]
-        :param target_lanes: collections.Iterable[str]
+        :param measure_range: Iterable
+        :param target_lanes: Iterable
         :return: None
         """
         for measure_number in measure_range:

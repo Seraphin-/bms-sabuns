@@ -4,7 +4,7 @@ import os
 import re
 import random
 
-assert(BMSparser.VERSION == '1.5')
+assert(BMSparser.VERSION == '1.6')
 
 if len(sys.argv) < 2:
 	print("Please provide a BMS to edit")
