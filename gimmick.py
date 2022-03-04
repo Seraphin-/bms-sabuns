@@ -101,6 +101,10 @@ class LL:
         :rtype: None
         """
 
+        if index == 0:
+            self.start = LLNode(value, self.start)
+            self.len += 1
+            return
         if self.len == 0 or index >= self.len:
             self[index] = value  # just shove it in
         n = self._traverse(index - 1)
@@ -108,19 +112,6 @@ class LL:
         n.next = LLNode(value)
         self.len += 1
         n.next.next = nn
-
-    def shift_start(self, index):
-        """
-        Add value empty items to the start
-
-        :param index: Index
-        :type index: int
-        :rtype: None
-        """
-        for _ in range(index):
-            nn = LLNode(None)
-            nn.next = self.start
-            self.start = nn
 
     def items(self):
         if self.len == 0:
@@ -395,7 +386,7 @@ class BMSparser:
         """
         if not self.allow_unsafe and length >= 16777216:
             raise ValueError(
-                "An unsafe BPM %d >= 16777216 was passed. This BPM may not work on LR2.\
+                "An unsafe BPM %d >= 16777216 was passed. This BPM may not work on LR2. \
 To allow, please set allow_unsafe in the BMSparser constructor.\
 https://twitter.com/okunigon/status/1307656187832201217"
                 % length
@@ -523,9 +514,8 @@ https://twitter.com/okunigon/status/1307656187832201217"
         """
 
         max_number = max(m.number for m in self.measures)
-        max_number = max(max_number, self.meters.len-1, self.bpm_measures.len-1, self.stop_measures.len-1)
         if max_number >= 999:  # LR2 does not seem to like #999
-            raise ValueError("Too many measures. No valid BMS can be produced %d" % max_number)
+            raise ValueError("Too many measures. No valid BMS can be produced.")
 
         print("<==============================>")
         print("Writing output to", name)
@@ -622,11 +612,6 @@ https://twitter.com/okunigon/status/1307656187832201217"
         for mes in self.measures:
             if mes.number >= start:
                 mes.number += delta
-        if start == 0:
-            self.bpm_measures.shift_start(delta)
-            self.stop_measures.shift_start(delta)
-            self.meters.shift_start(delta)
-            return
         for _ in range(delta):
             self.bpm_measures.append(start, None)
             self.stop_measures.append(start, None)
@@ -891,6 +876,8 @@ class InsertMesGimmick:
         :type measure: Measure
         :rtype: None
         """
+        if (self.mes_div % measure.size) != 0:
+            raise ArithmeticError("Resolution does not divide", measure.size)
         for n in measure.notes:
             self.all_notes[measure.number - self.insert_mes_offset].append(
                 Note(n.object, (n.pos * self.mes_div) // measure.size, n.lane))
